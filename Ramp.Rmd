@@ -1,0 +1,1093 @@
+---
+title: "RAMP"
+author: "Amin Asgharzadeh"
+date: "June 21, 2018"
+output: html_document
+---
+
+```{r , include=FALSE}
+library(survival)
+library(survminer)
+library(reshape)
+library(extrafont)
+loadfonts(device = "win")
+library(faraway)
+
+
+
+```
+
+
+
+```{r}
+setwd("C:/Users/m522a270/OneDrive - The University of Kansas/Amin/Thesis/Paper #Lane/Analysis")
+#setwd("E:/One/OneDrive - The University of Kansas/Amin/Thesis/Paper #Lane/Analysis")
+R <- read.csv("Ramp Survival.csv")
+
+R4N <- subset(R, Site == "4N")
+R4Y <- subset(R, Site == "4Y")
+R3N <- subset(R, Site == "3N")
+R3Y <- subset(R, Site == "3Y")
+```
+
+
+#Pre-Breakdown Analysis
+
+
+##Four Lane Not Metered
+
+```{r}
+
+ggplot(R4N , aes(x = RAMP, fill = Location , col = Location)) +
+geom_density(alpha = 0.2) +
+theme_bw() + 
+scale_x_continuous(name = "Ramp Flow (pc/hr/lane)") +# , limits = c(1000,2500)) +
+scale_y_continuous(name = "Density") +
+ggtitle("Pre-breakdown Ramp Flow Rate at Unmetered 4-Lane")+
+
+theme(text = element_text(family="Arial" ,size=12), axis.text.x = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , axis.text.y = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , legend.position = "right" , legend.text=element_text(size=10) , legend.title = element_blank())
+
+
+```
+
+##Four Lane Metered
+
+```{r}
+ggplot(R4Y , aes(x = VOL, fill = Location , col = Location)) +
+geom_density(alpha = 0.2) +
+theme_bw() + 
+scale_x_continuous(name = "Flow (pc/hr/lane)") +
+scale_y_continuous(name = "Density") +
+ggtitle("Pre-breakdown Flow Rate at Metered 4-Lane") +
+
+theme(text = element_text(family="Arial" ,size=12), axis.text.x = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , axis.text.y = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , legend.position = "right" , legend.text=element_text(size=10) , legend.title = element_blank())
+
+kruskal.test(VOL~Location, data = R4Y)
+
+
+ggplot(R4Y , aes(x = RAMP, fill = Location , col = Location)) +
+geom_density(alpha = 0.2) +
+theme_bw() + 
+scale_x_continuous(name = "Ramp Flow (pc/hr/lane)") +
+scale_y_continuous(name = "Density") +
+ggtitle("Pre-breakdown Ramp Flow Rate at Metered 4-Lane")+
+
+theme(text = element_text(family="Arial" ,size=12), axis.text.x = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , axis.text.y = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , legend.position = "right" , legend.text=element_text(size=10) , legend.title = element_blank())
+
+kruskal.test(RAMP~Location, data = R4Y)
+```
+
+
+```{r}
+ggplot(R3N , aes(x = VOL, fill = Location , col = Location)) +
+geom_density(alpha = 0.2) +
+theme_classic() + 
+scale_x_continuous(name = "Flow (pc/hr/lane)")+
+scale_y_continuous(name = "Density") +
+ggtitle("Pre-breakdown Flow rate at Unmetered 3-Lane")+
+
+theme(text = element_text(family="Arial" ,size=12), axis.text.x = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , axis.text.y = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , legend.position = "right" , legend.text=element_text(size=10) , legend.title = element_blank())
+
+kruskal.test(VOL~Location, data = R3N)
+
+
+ggplot(R3N , aes(x = RAMP, fill = Location , col = Location)) +
+geom_density(alpha = 0.2) +
+theme_classic() + 
+scale_x_continuous(name = "Ramp Flow (pc/hr/lane)") +
+scale_y_continuous(name = "Density") +
+ggtitle("Pre-breakdown Ramp Flow rate at Unmetered 3-Lane")+
+
+theme(text = element_text(family="Arial" ,size=12), axis.text.x = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , axis.text.y = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , legend.position = "right" , legend.text=element_text(size=10) , legend.title = element_blank())
+
+kruskal.test(RAMP~Location, data = R3N)
+```
+
+
+```{r}
+ggplot(R3Y , aes(x = VOL, fill = Location , col = Location)) +
+geom_density(alpha = 0.2) +
+theme_bw() + 
+scale_x_continuous(name = "Flow (pc/hr/lane)")+
+scale_y_continuous(name = "Density") +
+ggtitle("Pre-breakdown Flow Rate Metered 3-Lane")+
+
+theme(text = element_text(family="Arial" ,size=12), axis.text.x = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , axis.text.y = element_text(family="Arial" ,angle=0, hjust=1 ,size =12) , legend.position = "right" , legend.text=element_text(size=10) , legend.title = element_blank())
+
+```
+
+```{r}
+
+
+
+SURV <- Surv(time = R$Upstream, event =  R$BR)
+KMNPA <- survfit(SURV ~ R$Location , type="kaplan-meier") # For each group
+AGG3 <- survfit(SURV ~ 1, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(KMNPA , conf.int = TRUE , data = R, xlim = c(1250,2750), surv.median.line = "none", legend.title = "Site" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250
+,ggtheme = theme_classic(base_family = "Arial")
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black"), fun = "event")
+
+
+
+tapply(R$RAMP,R$Location , median)
+
+tapply(R$RAMP,R$Location , mean)
+
+```
+
+```{r}
+R1 <- subset(R, Location == "I-35 at 67th")    # original Threshold = 300 # STIE 12
+SURV1 <- Surv(time = R1$Upstream, event =  R1$BR)
+SURVFIT1 <- survfit(SURV1 ~ 1, type="kaplan-meier")            # Aggragate for all groups
+
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R1, xlim = c(1250,2750), surv.median.line = "none", legend.title = "Site" ,  xlab = "Upstream Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250
+,ggtheme = theme_classic(base_family = "Arial")
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black"), fun = "event")
+
+MED <- median(R1$RAMP)
+R_1 <- subset(R1, RAMP <= 300)
+R_1$CAT <- "Lower Ramp Flow"
+R_2 <- subset(R1, RAMP >  300)
+R_2$CAT <- "Higher Ramp Flow"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S12.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+#test1 <- cox.zph(COX1)
+#test1
+#ggcoxzph(test1)
+#ggcoxdiagnostics(COX1, type = "schoenfeld", linear.predictions = FALSE )
+
+
+
+MED <- median(R1$RAMP)
+R_1 <- subset(R1, RAMP <= 250)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R1, RAMP >  250)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow (veh/hr/ln)" , "Lower Ramp Flow (veh/hr/ln)")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S12.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+#test1 <- cox.zph(COX1)
+#test1
+#ggcoxzph(test1)
+#ggcoxdiagnostics(COX1, type = "schoenfeld", linear.predictions = FALSE )
+
+
+
+MED <- median(R1$RAMP)
+R_1 <- subset(R1, RAMP <= 350)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R1, RAMP >  350)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow (veh/hr/ln)" , "Lower Ramp Flow (veh/hr/ln)")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S12.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+#test1 <- cox.zph(COX1)
+#test1
+#ggcoxzph(test1)
+#ggcoxdiagnostics(COX1, type = "schoenfeld", linear.predictions = FALSE )
+```
+
+
+
+```{r}
+R2 <- subset(R, Location == "I-435 at Holmes")  # Threshold = 300;  SITE 8
+
+
+MED <- median(R2$RAMP)
+
+
+R_1 <- subset(R2, RAMP <=  250)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R2, RAMP >  250)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S8.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+R_1 <- subset(R2, RAMP <=  400)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R2, RAMP >  400)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S8.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+#test1 <- cox.zph(COX1)
+#test1
+#ggcoxzph(test1)
+#ggcoxdiagnostics(COX1, type = "schoenfeld", linear.predictions = FALSE )
+
+
+### 
+
+
+MED <- median(R2$RAMP)
+R_1 <- subset(R2, RAMP <=  300)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R2, RAMP >  300)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S8.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+MED <- median(R2$RAMP)
+R_1 <- subset(R2, RAMP <=  200)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R2, RAMP >  200)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S8.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+R_1 <- subset(R2, RAMP <=  150)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R2, RAMP >  150)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S8.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+#test1 <- cox.zph(COX1)
+#test1
+#ggcoxzph(test1)
+#ggcoxdiagnostics(COX1, type = "schoenfeld", linear.predictions = FALSE )
+```
+
+
+
+```{r}
+R3 <- subset(R, Location == "I-5 at 6th")  # Original Threshold = 800     SITE 1
+
+
+MED <- median(R3$RAMP)
+R_1 <- subset(R3, RAMP <=  800)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R3, RAMP >  800)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.3, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S1.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+#test1 <- cox.zph(COX1)
+#test1
+#ggcoxzph(test1)
+#ggcoxdiagnostics(COX1, type = "schoenfeld", linear.predictions = FALSE )
+
+
+
+
+MED <- median(R3$RAMP)
+R_1 <- subset(R3, RAMP <=  700)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R3, RAMP >  700)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S1.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+#test1 <- cox.zph(COX1)
+#test1
+#ggcoxzph(test1)
+#ggcoxdiagnostics(COX1, type = "schoenfeld", linear.predictions = FALSE )
+
+
+
+
+MED <- median(R3$RAMP)
+R_1 <- subset(R3, RAMP <=  750)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R3, RAMP >  750)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S1.png", width = 5, height = 4)
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+#test1 <- cox.zph(COX1)
+#test1
+#ggcoxzph(test1)
+#ggcoxdiagnostics(COX1, type = "schoenfeld", linear.predictions = FALSE )
+
+```
+
+
+
+
+```{r}
+R4 <- subset(R, Location == "I-5 at Brimingham ")  # original Volume 350   SITE 9
+
+
+MED <- median(R4$RAMP)
+R_1 <- subset(R4, RAMP <=  350)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R4, RAMP  >  350)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,2500), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S9.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+
+MED <- median(R4$RAMP)
+R_1 <- subset(R4, RAMP <=  400)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R4, RAMP >   400)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S9.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+MED <- median(R4$RAMP)
+R_1 <- subset(R4, RAMP <=  300)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R4, RAMP >   300)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S9.png", width = 5, height = 4)
+survdiff(SURV1 ~ CAT, data = R_A)
+
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+R_1 <- subset(R4, RAMP <=  200)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R4, RAMP >   200)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S9.png", width = 5, height = 4)
+survdiff(SURV1 ~ CAT, data = R_A)
+
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+```
+
+
+```{r}
+R5 <- subset(R, Location == "I-5 at Tamarack")   # Original threshold = 300   Site 11
+
+MED <- median(R5$RAMP)
+R_1 <- subset(R5, RAMP <=  300)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R5, RAMP >  300)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S11.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+R5 <- subset(R, Location == "I-5 at Tamarack")   # Original threshold = 300
+
+MED <- median(R5$RAMP)
+R_1 <- subset(R5, RAMP <=  350)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R5, RAMP  >  350)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S9.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+R5 <- subset(R, Location == "I-5 at Tamarack")   # Original threshold = 300
+
+   # Original threshold = 250
+
+MED <- median(R5$RAMP)
+R_1 <- subset(R5, RAMP <=  250)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R5, RAMP >  250)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Upstream Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S9.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+```
+
+
+
+
+```{r}
+R6 <- subset(R, Location == "I-70  at Blue Ridge") # Original Threshold = 300  Site 2
+
+
+MED <- median(R6$RAMP)
+R_1 <- subset(R6, RAMP <=  300)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R6, RAMP >  300)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$VOL, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S2.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+R6 <- subset(R, Location == "I-70  at Blue Ridge") #  Threshold = 350
+
+
+MED <- median(R6$RAMP)
+R_1 <- subset(R6, RAMP <=  350)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R6, RAMP >  350)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$VOL, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S2.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+
+R6 <- subset(R, Location == "I-70  at Blue Ridge") #  Threshold = 250
+
+MED <- median(R6$RAMP)
+R_1 <- subset(R6, RAMP <=  250)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R6, RAMP >  250)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$VOL, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S2.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+```
+
+
+
+```{r}
+R7 <- subset(R, Location == "I-80 at SR-32")   # Original Threshold = 600;  Site 4
+
+MED <- median(R7$RAMP)
+R_1 <- subset(R7, RAMP <=  600)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R7, RAMP >   600)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$VOL, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S4.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+R7 <- subset(R, Location == "I-80 at SR-32")   #  Threshold = 500
+
+
+
+MED <- median(R7$RAMP)
+R_1 <- subset(R7, RAMP <=  500)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R7, RAMP >   500)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S4.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+R7 <- subset(R, Location == "I-80 at SR-32")   #  Threshold = 700
+
+
+MED <- median(R7$RAMP)
+R_1 <- subset(R7, RAMP <=  700)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R7, RAMP >   700)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S4.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+```
+
+
+```{r}
+R8 <- subset(R, Location == "I-80 at Watt" )  # Original Threshold = 400
+SURV1 <- Surv(time = R_A$VOL, event =  R8$BR)
+SURVFIT1 <- survfit(SURV1 ~ 1, type="kaplan-meier")            # Aggragate for all groups
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")
+
+
+MED <- median(R8$RAMP)
+R_1 <- subset(R8, RAMP <=  400)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R8, RAMP >  400)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S20.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+#test1 <- cox.zph(COX1)
+#test1
+#ggcoxzph(test1)
+#ggcoxdiagnostics(COX1, type = "schoenfeld", linear.predictions = FALSE )
+
+
+MED <- median(R8$RAMP)
+R_1 <- subset(R8, RAMP <=  450)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R8, RAMP >  450)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S20.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+
+R8 <- subset(R, Location == "I-80 at Watt")  #  Threshold = 500
+
+MED <- median(R8$RAMP)
+R_1 <- subset(R8, RAMP <=  500)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R8, RAMP >  500)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$Upstream, event =  R_A$BR)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1000,3000), ylim = c(0,1) ,surv.median.line = "none", legend.title = "" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 250 , ylab = "Breakdown Probability"
+,ggtheme = theme_classic(base_family = "Arial"), legend = c(0.35, 0.8)
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,legend.labs= c("Higher Ramp Flow" , "Lower Ramp Flow")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black")
+,palette = c("#CABD08", "#000000")
+,fun = "event")+
+ggsave("S20.png", width = 5, height = 4)
+
+
+survdiff(SURV1 ~ CAT, data = R_A)
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+```
+
+
+```{r}
+R9 <- subset(R, Location ==  "US-101 at Hillsdale")  # original threshold = 300
+
+
+MED <- median(R9$RAMP)
+R_1 <- subset(R9, RAMP <=  300)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R9, RAMP >  300)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$VOL, event =  R_A$BR)
+survdiff(SURV1 ~ CAT, data = R_A)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1200,2600), surv.median.line = "none", legend.title = "US-101 at Hillsdale; Divide = 300" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 200
+,ggtheme = theme_classic(base_family = "Arial")
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black"), fun = "event")
+
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+R9 <- subset(R, Location ==  "US-101 at Hillsdale")  #  threshold = 350
+
+MED <- median(R9$RAMP)
+R_1 <- subset(R9, RAMP <=  350)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R9, RAMP >  350)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$VOL, event =  R_A$BR)
+survdiff(SURV1 ~ CAT, data = R_A)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1200,2600), surv.median.line = "none", legend.title = "US-101 at Hillsdale; Divide = 350" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 200
+,ggtheme = theme_classic(base_family = "Arial")
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black"), fun = "event")
+
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+
+
+
+R9 <- subset(R, Location ==  "US-101 at Hillsdale")  #  threshold = 400
+
+MED <- median(R9$RAMP)
+R_1 <- subset(R9, RAMP <=  400)
+R_1$CAT <- "Lower Ramp Vol (veh/hr/ln)"
+R_2 <- subset(R9, RAMP >  400)
+R_2$CAT <- "Higher Ramp Vol (veh/hr/ln)"
+R_A <- rbind(R_1,R_2)
+
+SURV1 <- Surv(time = R_A$VOL, event =  R_A$BR)
+survdiff(SURV1 ~ CAT, data = R_A)
+SURVFIT1 <- survfit(SURV1 ~ R_A$CAT, type="kaplan-meier")            # Aggragate for all groups
+
+ggsurvplot(SURVFIT1 , conf.int = TRUE , data = R_A, xlim = c(1200,2600), surv.median.line = "none", legend.title = "US-101 at Hillsdale; Divide = 400" ,  xlab = "Flow (pc/hr/ln)", censor = FALSE, break.x.by = 200
+,ggtheme = theme_classic(base_family = "Arial")
+,font.x = c(12, "plain", "black")
+,font.y = c(12, "plain", "black")
+,font.title = c(12, "plain", "black")
+,font.tickslab = c(12, "plain", "black"), fun = "event")
+
+COX1 <- coxph(SURV1 ~ CAT, data = R_A)
+summary(COX1)
+```
+
